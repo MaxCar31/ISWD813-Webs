@@ -11,7 +11,7 @@ import { MessageService, ChatMessage } from './message.js';
 class ChatController {
   constructor() {
     this.domHandler = new DOMHandler();
-    this.websocketManager = new WebSocketManager('ws://localhost:5000');
+    this.websocketManager = new WebSocketManager('ws://192.168.1.77:5000');
     this.init();
   }
 

@@ -39,6 +39,7 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-server.listen(PORT, (): void => {
-  console.log(`Servidor WebSocket en ejecución en http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', (): void => {
+  console.log(`Servidor WebSocket en ejecución en http://0.0.0.0:${PORT}`);
+  console.log(`Accesible desde otras máquinas en: http://192.168.1.77:${PORT}`);
 });
