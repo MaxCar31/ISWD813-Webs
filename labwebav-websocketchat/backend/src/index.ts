@@ -8,35 +8,32 @@ const server: http.Server = http.createServer(app);
 const wss: WebSocketServer = new WebSocket.Server({ server });
 const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
-// Middleware para servir archivos estáticos desde frontend/public
+
 app.use(express.static(path.join(__dirname, '../../frontend/public')));
 
-// Ruta para el archivo HTML principal
 app.get('/', (req: Request, res: Response): void => {
   res.sendFile(path.join(__dirname, '../../frontend/public', 'index.html'));
 });
 
-// WebSocket connection handling
+
 wss.on('connection', (ws: WebSocket) => {
   console.log('Nuevo cliente conectado');
   
   ws.on('message', (message: WebSocket.RawData) => {
     console.log('Mensaje recibido:', message.toString());
     
-    // Envío a todos los clientes conectados menos al remitente
+
     wss.clients.forEach((client: WebSocket) => {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
     });
   });
-  
-  // Manejador de errores de WebSocket
+
   ws.on('error', (err: Error) => {
     console.error('Error en WebSocket:', err);
   });
-  
-  // Notificación de desconexión
+
   ws.on('close', () => {
     console.log('Cliente desconectado');
   });
