@@ -1,40 +1,47 @@
 import express, { Express, Request, Response } from 'express';
+import http from 'http';
+import WebSocket, { WebSocketServer } from 'ws';
+import path from 'path';
 
 const app: Express = express();
-const PORT: number = 3000;
+const server: http.Server = http.createServer(app);
+const wss: WebSocketServer = new WebSocket.Server({ server });
+const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 
+// Middleware para servir archivos estáticos desde frontend/public
+app.use(express.static(path.join(__dirname, '../../frontend/public')));
 
-app.use(express.json());
-
-
-interface User { id: number; name: string; email: string }
-let users: User[] = [
-    { id: 1, name: 'Alice', email: 'alice@example.com' },
-    { id: 2, name: 'Bob',   email: 'bob@example.com' }
-];
-
-
-app.get('/api/users', (req: Request, res: Response): void => {
-    res.json(users);
+// Ruta para el archivo HTML principal
+app.get('/', (req: Request, res: Response): void => {
+  res.sendFile(path.join(__dirname, '../../frontend/public', 'index.html'));
 });
 
-app.get('/api/users/:id', (req: Request, res: Response): void => {
-    const id = parseInt(req.params.id, 10);
-    const user = users.find(u => u.id === id);
-    if (user) {
-        res.json(user);
-    } else {
-        res.status(404).json({ error: 'User not found' });
-    }
+// WebSocket connection handling
+wss.on('connection', (ws: WebSocket) => {
+  console.log('Nuevo cliente conectado');
+  
+  ws.on('message', (message: WebSocket.RawData) => {
+    console.log('Mensaje recibido:', message.toString());
+    
+    // Envío a todos los clientes conectados menos al remitente
+    wss.clients.forEach((client: WebSocket) => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+  
+  // Manejador de errores de WebSocket
+  ws.on('error', (err: Error) => {
+    console.error('Error en WebSocket:', err);
+  });
+  
+  // Notificación de desconexión
+  ws.on('close', () => {
+    console.log('Cliente desconectado');
+  });
 });
 
-app.post('/api/users', (req: Request, res: Response): void => {
-    const { name, email } = req.body as { name: string; email: string };
-    const newUser: User = { id: users.length + 1, name, email };
-    users.push(newUser);
-    res.status(201).json(newUser);
-});
-
-app.listen(PORT, (): void => {
-    console.log(`Server is listening at http://localhost:${PORT}`);
+server.listen(PORT, (): void => {
+  console.log(`Servidor WebSocket en ejecución en http://localhost:${PORT}`);
 });
